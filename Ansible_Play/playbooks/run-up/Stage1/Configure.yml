@@ -1,0 +1,217 @@
+- include_vars: ../../conf.yml
+#Omitted but important # sysctl -n vm.dirty_background_ratio
+# sysctl -n vm.vfs_cache_pressure
+#Checking for the presence of variables
+- name: Checking disable IPv6 grup -
+  shell: cat /etc/default/grub | grep ipv6.disable=1 | wc -l
+  register: grub_ipv6
+
+- name: Checking disable IPv6 sysctl all -
+  shell: cat /etc/sysctl.conf | grep net.ipv6.conf.all.disable_ipv6 | wc -l
+  register: sysctl_all_ipv6
+
+- name: Checking disable IPv6 sysctl default -
+  shell: cat /etc/sysctl.conf | grep net.ipv6.conf.default.disable_ipv6 | wc -l
+  register: sysctl_default_ipv6
+
+- name: Checking IP packet forwarding -
+  shell: cat /etc/sysctl.conf | grep net.ipv4.ip_forward | wc -l
+  register: sysctl_forwarding
+
+- name: Checking rp filter -
+  shell: cat /etc/sysctl.conf | grep net.ipv4.conf.default.rp_filter | wc -l
+  register: sysctl_rp_filter
+
+- name: Checking kernel sysrq -
+  shell: cat /etc/sysctl.conf | grep kernel.sysrq | wc -l
+  register: sysctl_kernel_sysrq
+
+- name: Checking kernel.core_uses_pid -
+  shell: cat /etc/sysctl.conf | grep kernel.core_uses_pid | wc -l
+  register: sysctl_core_pid
+
+- name: Checking net.ipv4.tcp_syncookies -
+  shell: cat /etc/sysctl.conf | grep net.ipv4.tcp_syncookies | wc -l
+  register: sysctl_tcp_syncookies
+
+- name: Checking kernel.msgmnb -
+  shell: cat /etc/sysctl.conf | grep kernel.msgmnb | wc -l
+  register: sysctl_kernel_msgmnb
+
+- name: Checking kernel.msgmax -
+  shell: cat /etc/sysctl.conf | grep kernel.msgmax | wc -l
+  register: sysctl_kernel_msgmax  
+
+- name: Checking kernel.shmmax -
+  shell: cat /etc/sysctl.conf | grep kernel.shmmax | wc -l
+  register: sysctl_kernel_shmmax
+
+- name: Checking kernel.kernel.shmall -
+  shell: cat /etc/sysctl.conf | grep kernel.shmall | wc -l
+  register: sysctl_kernel_shmall
+
+#Writing variables to a sysctl file
+- name: Recording IPv6 sysctl all and default -
+  blockinfile:
+   path: /etc/sysctl.conf
+   marker: "#Disable IPv6 - {{ NODE }}"
+   block: |
+    net.ipv6.conf.all.disable_ipv6 = 1
+    net.ipv6.conf.default.disable_ipv6 = 1
+  when:
+   - sysctl_all_ipv6.stdout == "0"
+   - sysctl_default_ipv6.stdout == "0"
+  register: sysctl_ipv6_status
+
+- name: Recording IP Forward -        
+  blockinfile:
+   path: /etc/sysctl.conf
+   marker: "#IP Forward - {{ NODE }}"
+   block: |
+    net.ipv4.ip_forward = 0
+  when:
+   - sysctl_forwarding.stdout == "0"
+  register: sysctl_forward_status
+
+- name: Recording rp filter -
+  blockinfile:
+   path: /etc/sysctl.conf
+   marker: "#rp filter - {{ NODE }}"
+   block: |
+    net.ipv4.conf.default.rp_filter = 1
+  when:
+   - sysctl_rp_filter.stdout == "0"
+  register: sysctl_rp_filter_status
+
+- name: Recording kernel sysrq -
+  blockinfile:
+   path: /etc/sysctl.conf
+   marker: "#kernel sysrq - {{ NODE }}"
+   block: |
+    kernel.sysrq = 0
+  when:
+   - sysctl_kernel_sysrq.stdout == "0"
+  register: sysctl_kernel_sysrq_status
+
+- name: Recording kernel_core_uses_pid -
+  blockinfile:
+   path: /etc/sysctl.conf
+   marker: "#kernel_core_uses_pid - {{ NODE }}"
+   block: |
+    kernel.core_uses_pid = 1
+  when:
+   - sysctl_core_pid.stdout == "0"
+  register: sysctl_core_pid_status
+
+- name: Recording net.ipv4.tcp_syncookies -
+  blockinfile:
+   path: /etc/sysctl.conf
+   marker: "#net_ipv4_tcp_syncookies - {{ NODE }}"
+   block: |
+    net.ipv4.tcp_syncookies = 1
+  when:
+   - sysctl_tcp_syncookies.stdout == "0"
+  register: sysctl_tcp_syncookies_status
+
+- name: Recording kernel.msgmnb -
+  blockinfile:
+   path: /etc/sysctl.conf
+   marker: "#kernel_msgmnb - {{ NODE }}"
+   block: |
+    kernel.msgmnb = 65536
+  when:
+   - sysctl_kernel_msgmnb.stdout == "0"
+  register: sysctl_kernel_msgmnb_status
+
+- name: Recording kernel.msgmax -
+  blockinfile:
+   path: /etc/sysctl.conf
+   marker: "#kernel_msgmax - {{ NODE }}"
+   block: |
+    kernel.msgmax = 65536
+  when:
+   - sysctl_kernel_msgmax.stdout == "0"
+  register: sysctl_kernel_msgmax_status
+
+- name: Recording kernel.shmmax -
+  blockinfile:
+   path: /etc/sysctl.conf
+   marker: "#kernel_shmmax - {{ NODE }}"
+   block: |
+    kernel.shmmax = 68719476736
+  when:
+   - sysctl_kernel_shmmax.stdout == "0"
+  register: sysctl_kernel_shmmax_status
+
+- name: Recording kernel.shmall -
+  blockinfile:
+   path: /etc/sysctl.conf
+   marker: "#kernel_kernel_shmall - {{ NODE }}"
+   block: |
+    kernel.shmall = 4294967296
+  when:
+   - sysctl_kernel_shmall.stdout == "0"
+  register: sysctl_kernel_shmall_status
+
+#Update GRUB
+- name: disable IPv6 grub -
+  lineinfile:
+   path: /etc/default/grub
+   insertafter: '^GRUB_TERMINAL_OUTPUT='
+   line: GRUB_CMDLINE_LINUX="ipv6.disable=1 crashkernel=auto rhgb quiet"
+   state: present
+  when: grub_ipv6.stdout == "0"
+  register: grub_ipv6_status
+
+- name: Grub Update -
+  command: /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+  when: grub_ipv6.stdout == "0"
+  register: grub_update
+
+#Create hosts file
+- name: Remove hosts -
+  command: /usr/bin/truncate -s0 /etc/hosts
+  register: del_hosts_status
+
+- name: Recording hosts node1 -
+  blockinfile:
+   path: /etc/hosts
+   marker: "#Hosts - {{ NODE }}"
+   block: |
+    127.0.0.1   localhost {{ NAMENODE1 }} {{ NAMENODE1 }}.{{ DOMAIN }}
+    {{ IPNODE1_1 }}  node1 {{ NAMENODE1 }} {{ NAMENODE1 }}.{{ DOMAIN }}
+    {{ IPNODE2_1 }}  node2 {{ NAMENODE2 }} {{ NAMENODE2 }}.{{ DOMAIN }}
+  when: NODE == "node1"
+  register: write_hosts_status_node1
+
+- name: Recording hosts node2 -
+  blockinfile:
+   path: /etc/hosts
+   marker: "#Hosts - {{ NODE }}"
+   block: |
+    127.0.0.1   localhost {{ NAMENODE2 }} {{ NAMENODE2 }}.{{ DOMAIN }}
+    {{ IPNODE2_1 }}  node1 {{ NAMENODE2 }} {{ NAMENODE2 }}.{{ DOMAIN }}
+    {{ IPNODE1_1 }}  node2 {{ NAMENODE1 }} {{ NAMENODE1 }}.{{ DOMAIN }}
+  when: NODE == "node2"
+  register: write_hosts_status_node2
+
+#Create hostname file
+- name: Delete hostname -
+  command: /usr/bin/truncate -s0 /etc/hostname
+  register: del_hostname_status
+
+- name: Recording hostname node1 -
+  lineinfile:
+   path: /etc/hostname
+   line: "{{ NAMENODE1 }}.{{ DOMAIN }}"
+   state: present
+  when: NODE == "node1"
+  register: write_hostname_status_node1
+
+- name: Recording hostname node2 -
+  lineinfile:
+   path: /etc/hostname       
+   line: "{{ NAMENODE2 }}.{{ DOMAIN }}"
+   state: present
+  when: NODE == "node2"
+  register: write_hostname_status_node2

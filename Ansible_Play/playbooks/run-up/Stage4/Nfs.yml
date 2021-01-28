@@ -1,0 +1,52 @@
+- include_vars: ../../conf.yml
+
+# Update package
+- name: Update package -
+  yum:
+   name: "*"
+   state: latest
+  register: repo_update
+
+# Installing nfs
+- name: NFS -
+  yum:
+   name:
+    - libnfsidmap
+    - nfs-utils
+    - nfs4-acl-tools
+   state: installed
+  when: repo_update.failed == false
+  register: yum_nfs 
+
+# Delete config
+- name: Delete config -
+  command: /usr/bin/truncate -s0 /etc/exports
+
+# Create exports
+- name: Создаем exports -
+  blockinfile:
+   path: /etc/exports
+   marker: "#Nfs config"
+   block: |
+    /opt/homes      {{ EXP1 }}(rw,insecure,no_root_squash)
+    /opt/homes      {{ EXP2 }}(rw,insecure,no_root_squash)
+    /opt/homes      {{ EXP3 }}(rw,insecure,no_root_squash)
+    /opt/homes      {{ EXP4 }}(rw,insecure,no_root_squash)
+    /opt/homes/home {{ EXP5 }}(fsid=0,rw,root_squash) 
+    /opt/temp	{{ EXP6 }}(ro)
+    /opt/temp	{{ EXP7 }}(rw,no_root_squash)
+    }
+  register: config_exports
+
+#Disable running nfs     
+- name: Autostart nfs -
+  systemd:
+   name: nfs
+   enabled: no
+
+#Starting nfs
+- name: Starting nfs -
+  systemd:
+   state: started
+   name: nfs
+  register: nfs_status

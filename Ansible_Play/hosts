@@ -1,0 +1,4 @@
+[nfscluster]
+ node1 ansible_ssh_host=1.1.1.1 ansible_ssh_port=22 ansible_ssh_user=root node_name=node1
+ node2 ansible_ssh_host=2.2.2.2 ansible_ssh_port=22 ansible_ssh_user=root node_name=node2
+

@@ -1,0 +1,109 @@
+- include_vars: ../../conf.yml
+# Update package
+- name: Update package -
+  yum:
+   name: "*"
+   state: latest
+  register: repo_update
+
+# Installing NSS
+- name: NSS -
+  yum:
+   name:
+    - nscd
+    - nss-pam-ldapd
+    - pam_ldap
+    - openldap-clients
+   state: installed
+  when: repo_update.failed == false
+  register: yum_nss
+
+# Delete config
+- name: Delete config -
+  command: /usr/bin/truncate -s0 /etc/nslcd.conf
+
+# Create config file nslcd
+- name: Create config file nslcd -
+  blockinfile:
+   path: /etc/nslcd.conf
+   marker: "#nslcd config"
+   block: |
+    ldap_version 3
+    uid nslcd
+    gid ldap
+    uri ldap://{{ NSSLDAPHOST }}:389/
+    base dc={{ NSSDC1 }},dc={{ NSSDC2 }}
+    ssl no
+    tls_cacertdir /etc/openldap/cacerts
+  register: config_create_nslcd
+
+# Empty line at the end of the file
+- name: Empty line at the end of the file -
+  shell: |
+   /usr/bin/echo -e ' \n' >> /etc/nslcd.conf
+
+# Delete config
+- name: Delete config -
+  command: /usr/bin/truncate -s0 /etc/nsswitch.conf
+
+# Create config file nsswitch
+- name: Create config file nsswitch -
+  blockinfile:
+   path: /etc/nsswitch.conf   
+   marker: "#nsswitch config"
+   block: |
+    passwd: files ldap
+    shadow: files ldap
+    group: files ldap
+    hosts: files dns
+    bootparams: nisplus [NOTFOUND=return] files
+    ethers: files
+    netmasks: files
+    networks: files
+    protocols: files
+    rpc: files
+    services: files
+    netgroup: files ldap
+    publickey: nisplus
+    automount: files ldap
+    aliases: files nisplus
+  register: config_create_nsswitch
+
+# Delete config
+- name: Delete config -
+  command: /usr/bin/truncate -s0 /etc/openldap/ldap.conf
+
+# Create config file ldap
+- name: Create config file ldap -
+  blockinfile:
+   path: /etc/openldap/ldap.conf
+   marker: "#ldap config"
+   block: |
+    TLS_CACERTDIR /etc/openldap/cacerts
+    URI ldap://{{ NSSLDAPHOST }}:389/
+    BASE dc={{ NSSDC1 }},dc={{ NSSDC2 }}
+  register: config_create_ldap
+
+#Checking for resource existence NSS
+- name: Checking for resource existence NSS -
+  shell: /usr/sbin/pcs status | grep NSS | wc -l
+  register: resource_status
+
+#Create a resource NSS
+- name: Create a resource NSS -
+  shell: |
+   /usr/sbin/pcs resource create NSS systemd:nslcd clone meta interleave=false ordered=true on-fail=restart
+  when:
+   - resource_status.stdout == "0"
+  register: resource_nss
+
+#Disable running nslcd
+- name: Autostart nslcd -
+  systemd:
+   name: nslcd
+   enabled: no
+
+#Enable Ldap authentication
+- name: Enable Ldap authentication -
+  command: /usr/sbin/authconfig --updateall --enableldap --enableldapauth
+  register: enable_ldap

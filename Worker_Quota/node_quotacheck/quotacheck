@@ -1,0 +1,48 @@
+#!/bin/bash
+###########################################
+# Description: Checking file system quota #
+# Mantainer: Ilyin.V.V ()                 #
+# Date: 21.12.2020                        #
+###########################################
+
+DATE=$(printf "%(%F_%H%M%S)T"); then="$(date '+%d-%m-%Y  %H:%M:%S')";
+DATE(){ date '+%d-%m-%Y  %H:%M:%S'; };
+path="/home/edquota/WorkerQuota/";
+log_file="log.quotacheck";
+quota_fs="/opt/homes/home/";
+zabbix_file="/etc/zabbix/zabbix_agentd.d/quotacheck.tmp";
+
+# Arr containing folders to be deleted
+arrRemove=("");
+
+ quotacheck(){
+ # Checking file system
+  echo " $(DATE) => quotacheck start $quota_fs" >> $path$log_file;
+  err=$(/usr/sbin/quotacheck -ugim $quota_fs);
+  if [ -z "$err" ]; then echo "1" > $zabbix_file;
+  echo " $(DATE) => quotacheck not err $quota_fs" >> $path$log_file;
+  else echo "0" > $zabbix_file;
+  echo " $(DATE) => quotacheck err $quota_fs - $err" >> $path$log_file;fi;
+  echo " $(DATE) => quotacheck stop $quota_fs" >> $path$log_file;
+ }
+
+ remove(){
+ # Remove file or folder problem process check
+  echo " $(DATE) => quotacheck remove start $quota_fs" >> $path$log_file;
+  for el in ${arrRemove[@]}; do
+   delete=$(/usr/bin/rm -Rf $el);
+   if [ -z "$delete" ]; then echo " $(DATE) => quotacheck remove $el" >> $path$log_file;
+   else echo " $(DATE) => quotacheck problem remove $el" >> $path$log; fi;
+  done
+  echo " $(DATE) => quotacheck remove stop $quota_fs" >> $path$log_file;
+ }
+
+ main(){
+ # main function
+  echo " $(DATE) => quotacheck start";
+  remove; quotacheck;
+  echo " $(DATE) => quotacheck stop";
+ }
+
+main
+

@@ -1,0 +1,21 @@
+- include_vars: ../../conf.yml
+# Update package
+- name: Update package -
+  yum:
+   name: "*"
+   state: latest
+  register: repo_update
+
+- name: Installing Pacemaker, Corosync -
+  yum:
+   name:
+    - corosync
+    - corosynclib
+    - pacemaker
+    - pacemaker-cli
+    - pacemaker-cluster-libs
+    - pacemaker-libs
+    - pcs
+   state: installed
+  when: repo_update.failed == false
+  register: yum_pacemaker 

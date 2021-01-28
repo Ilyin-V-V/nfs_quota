@@ -1,0 +1,54 @@
+- include_vars: ../../conf.yml
+- name: Disable IPv6 -
+  lineinfile:
+   path: /etc/ssh/sshd_config
+   insertafter: '^#AddressFamily'
+   line: "AddressFamily {{ SSH_Address_Family }}" 
+   state: present
+  register: ssh_disable_ipv6_status
+
+- name: Set port for service
+  lineinfile:
+   path: /etc/ssh/sshd_config
+   insertafter: '^#Port'
+   line: "Port {{ SSH_port }}"
+   state: present
+  register: ssh_port_status
+
+- name: IP address service -
+  lineinfile:
+   path: /etc/ssh/sshd_config
+   insertafter: '^#ListenAddress'
+   line: "ListenAddress {{ SSH_Listen_Address }}"
+   state: present
+  register: ssh_ip_address_status
+
+- name: Access root service -
+  lineinfile:
+   path: /etc/ssh/sshd_config
+   regexp: '^PermitRootLogin'
+   line: "{{ SSH_Permit_Root_Login }}"
+   state: present
+  register: ssh_root_status
+
+- name: Authentication key -
+  lineinfile:
+   path: /etc/ssh/sshd_config
+   regexp: '^PubkeyAuthentication'
+   line: "{{ SSH_Pubkey_Authentication }}"
+   state: present
+  register: ssh_key_status
+
+- name: Authentication password -
+  lineinfile:
+   path: /etc/ssh/sshd_config
+   regexp: '^PasswordAuthentication'
+   line: "{{ SSH_Password_Authentication }}"
+   state: present
+  register: ssh_password_status
+
+- name: Restart sshd
+  command: /usr/bin/systemctl reload sshd
+  register: ssh_restart_status
+
+- debug: msg="AddressFamily - {{ SSH_Address_Family }}, Port - {{ SSH_port }}, ListenAddress - {{ SSH_Listen_Address }}, {{ SSH_Permit_Root_Login }}, {{ SSH_Pubkey_Authentication }}, {{ SSH_Password_Authentication }}"

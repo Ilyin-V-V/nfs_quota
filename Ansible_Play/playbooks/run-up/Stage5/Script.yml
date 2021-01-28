@@ -1,0 +1,16 @@
+- include_vars: ../../conf.yml
+
+- name: Check write ntp -
+  shell: cat /etc/crontab | grep fs.sh | wc -l
+  register: cron_fs
+
+#Recording tasks in crontab
+- name: Recording tasks in crontab -
+  blockinfile:
+   path: /etc/crontab
+   marker: "#Cron Tasks"
+   block: |
+    0  */3  *  *  *    root   /usr/sbin/ntpdate -s host.domain.ru
+  when:
+   - cron_fs.stdout == "0"
+  register: scripts_cron

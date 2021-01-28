@@ -1,0 +1,44 @@
+Node quota management (blocks only):
+ Files -
+  cfg.py - settings
+        path - path to py scripts
+        path_sh - path to the edquota.sh script
+        filesystem - array of quoted f.s.
+        edquota - utility for working with quotas
+        cat, sed, grep, getent, cut, sudo - cat, sed, grep, getent, cut, sudo - respectively
+        run_sudo - True / False. True if work is required by a non-privileged user,
+                for this you need to give permission to execute as root,
+                as follows:% edquota ALL = (ALL) NOPASSWD: SETENV: / usr / sbin / edquota
+  core.py - main program
+  help.py - module for displaying help for the -h switch
+  logger.py - logging module
+  quota.py - quota management module
+  log.log - log file
+  report - report file
+
+ Functionality -
+  1) Displaying information on the user's quota.
+        Command format: command --show -f filesystem -u user
+                filesystem - the name of the quota file system
+
+  2) Adding user quota.
+        Command format: command --add -f filesystem -u user -s soft -h hard
+
+  3) Changing user quota.
+        Command format: command --edit -f filesystem -u user -s soft -h hard
+
+  4) Reset user quota.
+        Command format: command --remove -f filesystem -u user
+
+  5) Obtaining a report on quotas of all users (for all f.s)
+        * Additionally, the report is saved to the report file
+        Command format: command --all -r
+
+  6) Changing user quota without checking.
+        Command format: command --change -f filesystem -u user -s soft -h hard
+
+ Installation -
+  1) Install packages to work with quotas, edquota must be present
+  2) Register paths in cfg.py
+  3) If you want to run as a user add sudo to run edquota
+        set run_sudo to True

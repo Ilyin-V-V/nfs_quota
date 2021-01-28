@@ -1,0 +1,26 @@
+# 5) Refinement of the cluster
+- hosts: nfscluster
+  tasks:
+  - include_vars: conf.yml
+
+# Setting script
+  - include: run-up/Stage5/Script.yml
+  - debug:
+     msg:
+      - "Preparation result Scripts"
+      - "1) Recording in cron"
+
+# Installing other programs
+  - include: run-up/Stage5/Program.yml
+  - debug:
+     msg:
+      - "Installation and configuration result"
+      - "1) Installation rsync, iotop, iperf, lm_sensors, smartmontools, zabbix-agent"
+
+# Setting up logs
+  - include: run-up/Stage5/Logrotate.yml
+  - debug:
+     msg:
+      - "Result of setting up logs"
+      - "1) Setting up logs ntpd"
+

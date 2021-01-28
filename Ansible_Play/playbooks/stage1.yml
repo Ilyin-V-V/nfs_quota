@@ -1,0 +1,62 @@
+# 1) Preparing the platform
+- hosts: nfscluster
+  tasks:
+  - include_vars: conf.yml
+# We remove unnecessary
+  - include: run-up/Stage1/Clear.yml
+  - debug:
+     msg:
+      - "Removal result"
+      - "1) Removal - Completed - {{ yum_status.changed }} ; Error - {{ yum_status.failed }}"
+# We install the necessary
+  - include: run-up/Stage1/Install.yml
+    when: yum_status.failed == false
+  - debug: 
+     msg:
+      - "Installation result"
+      - "1) Install epel-release - Completed - {{ yum_epel.changed }} ; Error - {{ yum_epel.failed }}"
+      - "2) Update package - Completed - {{ yum_update.changed }} ; Error - {{ yum_update.failed }}" 
+      - "3) Clean package - Completed - {{ yum_autoremove.changed }} ; Error - {{ yum_autoremove.failed }}"
+      - "4) Install package - Completed - {{ yum_install.changed }} ; Error - {{ yum_install.failed }}"
+# Configuring
+  - include: run-up/Stage1/Configure.yml
+    when: (yum_epel.failed == false) and
+          (yum_update.failed == false) and
+          (yum_autoremove.failed == false) and
+          (yum_install.failed == false)
+
+  - debug:
+     msg:
+      - "Setting result"
+      - "1) Recording sysctl"
+      - "2) Grub Update - Completed - {{ grub_update.changed }} ; Skipped - {{ grub_update.changed }}"
+      - "3) Delete hosts - Completed - {{ del_hosts_status.changed }} ; Error - {{ del_hosts_status.failed }}"
+      - "4) Recording hosts node1 - Completed - {{ write_hosts_status_node1.changed }} ; Error - {{ write_hosts_status_node1.failed }}"
+    when: NODE == "node1"
+  
+  - debug:
+     msg:
+      - "Setting result"
+      - "1) Recording sysctl"
+      - "2) Grub Update - Completed - {{ grub_update.changed }} ; Skipped - {{ grub_update.changed }}"
+      - "3) Delete hosts - Completed - {{ del_hosts_status.changed }} ; Error - {{ del_hosts_status.failed }}"
+      - "4) Recording hosts node2 - Completed - {{ write_hosts_status_node2.changed }} ; Error - {{ write_hosts_status_node2.failed }}"
+    when: NODE == "node2"
+
+  - include: run-up/Stage1/Ssh.yml
+  - debug:
+     msg:
+      - "SSH daemon setup result"
+      - "1) Disable IPv6 - Completed - {{ ssh_disable_ipv6_status.changed }} ; Error - {{ ssh_disable_ipv6_status.failed }}"
+      - "2) Set port service - Completed - {{ ssh_port_status.changed }} ; Error - {{ ssh_port_status.failed }}"
+      - "3) IP address service - Completed - {{ ssh_ip_address_status.changed }} ; Error - {{ ssh_ip_address_status.failed }}"
+      - "4) Access root ssh - Completed - {{ ssh_root_status.changed }} ; Error - {{ ssh_root_status.failed }}"
+      - "5) Authentication key - Completed - {{ ssh_key_status.changed }} ; Error - {{ ssh_key_status.failed }}"
+      - "6) Authentication password - Completed - {{ ssh_password_status.changed }} ; Error - {{ ssh_password_status.failed }}"
+      - "7) Restart sshd - Completed - {{ ssh_restart_status.changed }} ; Error - {{ ssh_restart_status.failed }}"    
+
+  - include: run-up/Stage1/Reboot.yml
+  - debug:
+     msg:
+      - "Reboot node - Completed - {{ reboot_status.changed }} ; Error - {{ reboot_status.failed }}"
+

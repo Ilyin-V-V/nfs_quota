@@ -1,0 +1,38 @@
+# 3) Installing and configuring a resource cluster
+- hosts: nfscluster
+  tasks:
+  - include_vars: conf.yml
+# Preparation brick
+  - include: run-up/Stage3/PacemakerCorosyncInstall.yml
+  - debug:
+     msg:
+      - "Installation result Pacemaker, Corosync"
+      - "1) Installing Pacemaker и Corosync - Performed - {{ yum_pacemaker.changed }} ; Error - {{ yum_pacemaker.failed }}"
+
+  - include: run-up/Stage3/PacemakerCorosyncStart.yml
+  - debug:
+     msg:
+      - "Setting result Pacemaker, Corosync"
+      - "1) Create config Corosync - Performed - {{ add_corosync_conf.changed }};  - {{ add_corosync_conf.failed }}"
+      - "2) Starting Corosync - Performed - {{ corosync_status.changed }}; Error - {{ corosync_status.failed }}"
+      - "3) Starting Pacemaker - Performed - {{ pacemaker_status.changed }}; Error - {{ pacemaker_status.failed }}"
+      - "4) Starting Pcsd - Performed - {{ pcsd_service_status.changed }}; Error - {{ pcsd_service_status.failed }}"
+      - "5) Setting up cluster pacemaker - Performed - {{ enable_cluster.changed }}; Error - {{ enable_cluster.failed }}"
+      - "6) Resource preset pacemaker - Performed - {{ config_cluster.changed }}; Error - {{ config_cluster.failed }}"
+
+#=================================================================================================================================
+  - debug:
+     msg:
+      - "Installation result Pacemaker, Corosync"
+      - "1) Installing Pacemaker and Corosync - Performed - {{ yum_pacemaker.changed }} ; Error - {{ yum_pacemaker.failed }}"
+
+  - debug:
+     msg:
+      - "Setting result Pacemaker, Corosync"
+      - "1) Create config Corosync - Performed - {{ add_corosync_conf.changed }}; Error - {{ add_corosync_conf.failed }}"
+      - "2) Starting Corosync - Performed - {{ corosync_status.changed }}; Error - {{ corosync_status.failed }}"
+      - "3) Starting Pacemaker - Performed - {{ pacemaker_status.changed }}; Error - {{ pacemaker_status.failed }}"
+      - "4) Starting Pcsd - Performed - {{ pcsd_service_status.changed }}; Error - {{ pcsd_service_status.failed }}"
+      - "5) Setting up cluster pacemaker - Performed - {{ enable_cluster.changed }}; Error - {{ enable_cluster.failed }}"
+      - "6) Resource preset pacemaker - Performed - {{ config_cluster.changed }}; Error - {{ config_cluster.failed }}"
+

@@ -1,0 +1,64 @@
+#Update base
+- name: Update package -
+  yum:
+   name: "*"
+   state: latest
+  register: repo_update
+
+#Install ClusterFS
+- name: Install ClusterFS -
+  yum:
+   name:
+    - gfs2-utils
+    - dlm
+    - lvm2-cluster
+   state: installed
+  when: repo_update.failed == false
+  register: yum_cluster 
+
+#Checking for availability lv_data
+- name: Checking for availability lv_data -
+  shell: fdisk -l | grep lv_data | wc -l
+  register: lv_data
+
+#File system creation
+- name: File system creation -
+  shell: |
+   - /usr/sbin/pvcreate {{ CLUSTER_DEV }}
+   - /usr/sbin/vgcreate data {{ CLUSTER_DEV }}
+   - /usr/sbin/lvcreate -l100%FREE -n lv_data data
+   - /usr/sbin/mkfs.gfs2 -p lock_dlm -t nfs_cluster:gfs -j 2 /dev/data/lv_data
+  when:
+   - lv_data.stdout == "0"
+  register: dev_status
+
+#Enabling LVM Cluster Locks LVM
+- name: Enabling LVM Cluster Locks LVM -
+  shell: |
+   - /usr/sbin/lvmconf --enable-cluster
+  register: lvm_conf
+
+#Checking for availability locking_type
+- name: Checking for availability lock_type -
+  shell: cat /etc/lvm/lvm.conf | grep 'locking_type = 3' | wc -l
+  register: lock_type
+
+- name: locking_type -
+  lineinfile:
+   path: /etc/lvm/lvm.conf
+   insertafter: '^locking_type'
+   line: "locking_type = 3"
+   state: present
+  when:
+   - lock_type.stdout == "0"
+  register: locking_type_status
+
+#enable
+#cat /etc/dlm/dlm.conf 
+#enable_fencing = 0
+#enable_concurrent_fencing = 0
+#enable_startup_fencing = 0
+#enable_quorum_fencing = 0
+#enable_quorum_lockspace = 0
+#repeat_failed_fencing = 0
+

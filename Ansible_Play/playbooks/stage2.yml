@@ -1,0 +1,19 @@
+# 2) Installing and configuring ClusterFS
+- hosts: nfscluster
+  tasks:
+  - include_vars: conf.yml
+# Preparation brick
+  - include: run-up/Stage2/Folder.yml
+  - debug:
+     msg:
+      - "Create directory home"
+      - "1) Create /opt/homes/home - Performed - {{ conf_node_status.changed }} ; Error - {{ conf_node_status.failed }}"
+
+# Installing Cluster
+  - include: run-up/Stage2/ClusterFS.yml
+  - debug:
+     msg:
+      - "Installation result GlusterFS"
+      - "1) Installing Cluster fs - Performed - {{ yum_cluster.changed }} ; Error - {{ yum_cluster.failed }}"
+      - "2) Create file system - Performed - {{ lv_data.changed }} ; Error - {{ lv_data.failed }}"
+      - "3) Turn on locks lvm - Performed - {{ lv_data.changed }} ; Error - {{ lv_data.failed }}"

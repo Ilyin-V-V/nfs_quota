@@ -1,0 +1,72 @@
+- include_vars: ../../conf.yml
+# Update package
+- name: Update package -
+  yum:
+   name: "*"
+   state: latest
+  register: repo_update
+
+# Installing ntp
+- name: NTP -
+  yum:
+   name:
+    - ntp
+    - ntpdate
+   state: installed
+  when: repo_update.failed == false
+  register: yum_ntp 
+
+# Delete config
+- name: Delete config -
+  command: /usr/bin/truncate -s0 /etc/ntp.conf
+
+# Create config file ntp
+- name: Create config file ntp -
+  blockinfile:
+   path: /etc/ntp.conf
+   marker: "#ntp config"
+   block: |
+    driftfile /var/lib/ntp/drift
+    interface ignore wildcard
+    restrict default kod nomodify notrap nopeer noquery
+    restrict 127.0.0.1
+    server 10.1.20.1
+    server ntp.neyvabank.ru
+    includefile /etc/ntp/crypto/pw
+    keys /etc/ntp/keys
+    disable monitor
+    logfile /var/log/ntp.log
+  register: config_create
+
+#Disable running ntp     
+- name: Autostart ntp -
+  systemd:
+   name: ntpd
+   enabled: no
+
+#Starting Ntp
+- name: Starting Ntpd -
+  systemd:
+   state: started
+   name: ntpd
+  register: ntpd_status
+
+#Checking for the existence of an NTP resource
+- name: Checking for the existence of an NTP resource -
+  shell: /usr/sbin/pcs status | grep NTP | wc -l
+  register: resource_status
+
+#Create resource NTPD
+- name: Create a resource NTPD -
+  shell: |
+   /usr/sbin/pcs resource create NTP systemd:ntpd clone meta interleave=false ordered=true on-fail=restart
+  when:
+   - resource_status.stdout == "0"
+  register: resource_ntp
+
+#Stop Systemd:Ntpd
+- name: Stop Systemd:Ntpd -
+  systemd:
+   state: stopped
+   name: ntpd
+

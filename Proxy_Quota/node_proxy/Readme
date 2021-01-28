@@ -1,0 +1,24 @@
+1. Setting up nodes:
+ - Add user edquota
+        - edquota: x: 1000: 1000 :: / home / edquota: / bin / bash
+        - In .bashrc add editor => export EDITOR = '/ home / edquota / edquota.sh'
+        - Copy edquota.sh to / home / edquota /
+ - Add to sudoers execution: edquota
+        - ## Edit quota, user edquota
+        -% edquota ALL = (ALL) NOPASSWD: SETENV: /usr/sbin/edquota,/home/edquota/edquota.sh
+
+2. The control node (it) contains the proxy-connector script
+ - Functions of receiving and transmitting commands from the connector to the nodes and vice versa,
+        SSH communication
+ - Setting:
+        Add to cfg:
+                path - path to the script
+                ssh_host - array of nodes
+                ssh_port, ssh_user - ssh port, user
+                command_worker - path to the worker on the node
+ - Files:
+        cfg - settings
+        logger - logging module
+        mail - notification module
+        log.log - script log
+        core - main

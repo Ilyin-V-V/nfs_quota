@@ -1,0 +1,90 @@
+- include_vars: ../../conf.yml
+#Checking the existence of a DLM resource
+- name: Checking the existence of a DLM resource -
+  shell: /usr/sbin/pcs status | grep DLM | wc -l
+  register: dlm_status
+
+#Create DLM resource
+- name: Create DLM resource -
+  shell: |
+   pcs resource create DLM ocf:pacemaker:controld op monitor interval=30s on-fail=restart clone interleave=true ordered=true
+   pcs resource update DLM allow_stonith_disabled=true
+  when:
+   - dlm_status.stdout == "0"
+  register: resource_dlm
+
+#Checking the existence of a CLVM resource
+- name: Checking the existence of a CLVM resource -
+  shell: /usr/sbin/pcs status | grep CLVM | wc -l
+  register: clvm_status
+
+#Create CLVM resource
+- name: Create CLVM resource -
+  shell: |
+   pcs resource create CLVMD ocf:heartbeat:clvm op monitor interval=30s on-fail=restart clone interleave=true ordered=true
+  when:
+   - clvm_status.stdout == "0"
+  register: resource_clvm 
+
+#Checking the existence of a SHARE resource
+- name: Checking the existence of a SHARE resource -
+  shell: /usr/sbin/pcs status | grep SHARE | wc -l
+  register: share_status
+
+#Create SHARE resource
+- name: Create SHARE resource -
+  shell: |
+   pcs resource create SHARE ocf:heartbeat:Filesystem device="/dev/data/lv_data" directory="/opt/homes/home" fstype="gfs2" options="noatime,nodiratime,localflocks,acl,quota=on"
+  when:
+   - share_status.stdout == "0"
+  register: resource_share
+
+#Create quota file
+- name: Create quota file -
+  shell: /usr/sbin/quotacheck -ug /opt/homes/home/
+  register: quota_status
+
+#Checking the existence of a NFS resource
+- name: Checking the existence of a NFS resource -
+  shell: /usr/sbin/pcs status | grep NFS | wc -l
+  register: nfs_status
+
+#Create NFS resource
+- name: Create NFS resource -
+  shell: |
+   /usr/sbin/pcs resource create NFS systemd:nfs op monitor interval=10s on-fail=restart
+  when:
+   - nfs_status.stdout == "0"
+  register: resource_nfs
+
+#Disable runnong nfs-lock     
+- name: Autostart nfs-lock -
+  systemd:
+   name: nfs-lock
+   enabled: no
+
+#Checking the existence of a IP resource 
+- name: Checking the existence of a IP resource -
+  shell: /usr/sbin/pcs status | grep IP | wc -l
+  register: ip_status
+
+#Create IP resource
+- name: Create IP resource -
+  shell: |
+   /usr/sbin/pcs resource create GW ocf:heartbeat:IPaddr2 ip={{ VIP }} cidr_netmask=32 op monitor interval=5s
+  when:
+   - ip_status.stdout == "0"
+  register: resource_ip  
+
+#Resource running order
+- name: Resource running order -
+  shell: |
+   /usr/sbin/pcs constraint order start DLM-clone then CLVMD-clone
+   /usr/sbin/pcs constraint order start CLVMD-clone then SHARE
+   /usr/sbin/pcs resource move IP node1
+   /usr/sbin/pcs constraint colocation add SHARE with IP
+   /usr/sbin/pcs constraint colocation add NFS with IP 
+  when:
+   - nfs_status.stdout == "0"
+  register: resource_status
+

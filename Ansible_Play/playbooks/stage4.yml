@@ -1,0 +1,38 @@
+# 4) Installing and configuring services
+- hosts: nfscluster
+  tasks:
+  - include_vars: conf.yml
+  - include: run-up/Stage4/Ntpd.yml
+  - debug:
+     msg:
+      - "Installation and configuration result NTPD"
+      - "1) Installation NTP - Performed - {{ yum_ntp.changed }} ; Error - {{ yum_ntp.results }}"
+      - "2) Let's prepare the config - Performed - {{ config_create.changed }} ; Error - {{ config_create.msg }}"
+      - "3) Starting NTP - Performed - {{ ntpd_status.changed }} ; Error - {{ ntpd_status.state }}"
+      - "4) Create role NTP Clone - Performed - {{ resource_ntp.changed }} ; Error - {{ resource_ntp.changed }}"
+
+  - include: run-up/Stage4/Nfs.yml
+  - debug:
+     msg:
+      - "Installation and configuration result Nfs"
+      - "1) Installation NFS - Performed - {{ yum_nfs.changed }} ; Error - {{ yum_nfs.results }}"
+      - "2) Let's prepare the config - Performed - {{ config_exports.changed }} ; Error - {{ config_exports.msg }}"
+
+  - include: run-up/Stage4/Resource.yml
+  - debug:
+     msg:
+      - "Setting up resources"
+      - "1) Resource DLM - Performed - {{ resource_dlm.changed }} ; Error - {{ resource_dlm.failed }}"
+      - "2) Resource CLVM - Performed - {{ resource_clvm.changed }} ; Error - {{ resource_clvm.failed }}"
+      - "3) Resource SHARE - Performed - {{ resource_share.changed }} ; Error - {{ resource_share.failed }}"
+      - "4) Resource NFS - Performed - {{ resource_nfs.changed }} ; Error - {{ resource_nfs.failed }}"
+      - "5) Resource IP - Performed - {{ resource_ip.changed }} ; Error - {{ resource_ip.failed }}"
+
+  - include: run-up/Stage4/Nss.yml
+  - debug:
+     msg:
+      - "Installation and configuration result Nss OpenLdap"
+      - "1) Installing Nss, OpenLdap - Performed - {{ yum_nss.changed }} ; Error - {{ yum_nss.failed }}"
+      - "2) Let's prepare the config - Performed - {{ config_create_nslcd.changed }} ; Performed - {{ config_create_nsswitch.changed }} ; Performed - {{ config_create_ldap.changed }}"
+      - "3) Create a resource NSS - Performed - {{ resource_nss.changed }} ; Performed - {{ resource_nss.changed }}"
+      - "4) Turn on Ldap authentication - Performed - {{ enable_ldap.changed }} ; Error - {{ enable_ldap.failed }}"

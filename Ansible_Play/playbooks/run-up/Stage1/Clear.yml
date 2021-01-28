@@ -1,0 +1,15 @@
+# Removing packages
+- name: Removing packages -
+  yum:
+   name:
+    - alsa-firmware
+    - alsa-lib
+    - alsa-tools
+    - firewalld
+    - firewalld-filesystem
+    - mariadb-libs
+    - postfix
+    - selinux-policy
+    - selinux-policy-targeted
+   state: removed
+  register: yum_status

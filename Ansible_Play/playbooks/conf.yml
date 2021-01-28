@@ -1,0 +1,48 @@
+#NODE CONFIG - NODE1, NODE2
+NODE: node1
+#CONFIG - node1 node2
+NAMEACTIVE: node1
+NAMENEIGHBOR: node2
+#NAME
+NAMENODE1: nfs-01
+NAMENODE2: nfs-02
+DOMAIN: domain.ru
+#IP ADDR MASK
+#IP WAN1
+IPNODE1_1: 1.1.1.1
+IPNODE2_1: 2.2.2.2
+MASKPREFIXWAN1: 24
+#FACE
+NODE1NETFACE: ens192
+NODE2NETFACE: ens192
+#SSH
+SSH_port: 22
+SSH_Listen_Address: 0.0.0.0
+SSH_Address_Family: inet
+SSH_Permit_Root_Login: PermitRootLogin yes
+SSH_Pubkey_Authentication: PubkeyAuthentication yes
+SSH_Password_Authentication: PasswordAuthentication yes
+#CLUSTER FS
+CLUSTER_PATH: /opt/homes/home
+#DEV
+CLUSTER_DEV: /dev/sdc
+#PACEMAKER,COROSYNC
+PACEUSER: hacluster
+#Pass openssl passwd -1 
+PACEPASSWD: pass
+PACEPASSWDHASH: hash
+#NFS
+EXP1: 1.1.1.0/24 
+#NSS, LDAP
+NSSLDAPHOST: ldap.domain.ru
+NSSDC1: domain
+NSSDC2: ru
+#NFS
+VIP: 1.1.1.9
+#IPTABLES
+#Script
+#ZABBIX
+ZABBIXHOSTNAME1: nfs-01
+ZABBIXHOSTNAME2: nfs-01
+ZABBIXSERVER: 3.3.3.3
+ZABBIXSERVERACTIVE: 3.3.3.3

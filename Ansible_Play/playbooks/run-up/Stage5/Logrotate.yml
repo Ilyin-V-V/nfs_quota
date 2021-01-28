@@ -1,0 +1,21 @@
+# layered cake
+- include_vars: ../../conf.yml
+
+#Delete config logrotate ntp
+- name: Delete config ntp -
+  command: /usr/bin/truncate -s0 /etc/logrotate.d/ntp
+
+#Create ntp logrotate conf
+- name: Create ntp logrotate conf -
+  blockinfile:
+   path: /etc/logrotate.d/ntp
+   marker: "#Ntp"
+   block: |
+    /var/log/ntp.log {
+        monthly
+        missingok
+        postrotate
+            /usr/bin/killall -HUP ntpd
+        endscript
+        rotate 6
+    }

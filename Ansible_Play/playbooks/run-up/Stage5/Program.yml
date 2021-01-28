@@ -1,0 +1,83 @@
+# layered cake
+- include_vars: ../../conf.yml
+
+#Update package
+- name: Update package -
+  yum:
+   name: "*"
+   state: latest
+  register: repo_update
+
+#Zabbix
+- name: Add repo zabbix -
+  command: /usr/bin/rpm -Uvh --httpproxy=http://host.domain.ru:3128 https://repo.zabbix.com/zabbix/4.3/rhel/7/x86_64/zabbix-release-4.3-1.el7.noarch.rpm
+
+#Install
+- name: rsync, iotop, iperf, lm_sensors, smartmontools, zabbix-agent -
+  yum:
+   name:
+    - iotop
+    - iperf
+    - lm_sensors
+    - smartmontools
+    - zabbix-agent
+    - rsync
+    - postfix
+   state: installed
+  when: repo_update.failed == false
+  register: yum_install
+
+#Delete config zabbix
+- name: Delete config zabbix -
+  command: /usr/bin/truncate -s0 /etc/zabbix/zabbix_agentd.conf
+
+#Create zabbix conf file node1
+- name: Create zabbix conf file node1 -
+  blockinfile:
+   path: /etc/zabbix/zabbix_agentd.conf
+   marker: "#Zabbix"
+   block: |
+    ListenIP=0.0.0.0
+    ListenPort=30050
+    StartAgents=1
+    PidFile=/var/run/zabbix/zabbix_agentd.pid
+    LogFile=/var/log/zabbix/zabbix_agentd.log
+    LogFileSize=0
+    Server={{ ZABBIXSERVER }}
+    ServerActive={{ ZABBIXSERVERACTIVE }}
+    Hostname={{ ZABBIXHOSTNAME1 }}
+    Include=/etc/zabbix/zabbix_agentd.d/*.conf
+  when: NODE == "node1"
+  register: config_zabbix_node1
+
+#Create zabbix conf file node2
+- name: Create zabbix conf file node2 -
+  blockinfile:
+   path: /etc/zabbix/zabbix_agentd.conf
+   marker: "#Zabbix"
+   block: |
+    ListenIP=0.0.0.0
+    ListenPort=30050
+    StartAgents=1
+    PidFile=/var/run/zabbix/zabbix_agentd.pid
+    LogFile=/var/log/zabbix/zabbix_agentd.log
+    LogFileSize=0
+    Server={{ ZABBIXSERVER }}
+    ServerActive={{ ZABBIXSERVERACTIVE }}
+    Hostname={{ ZABBIXHOSTNAME2 }}
+    Include=/etc/zabbix/zabbix_agentd.d/*.conf
+  when: NODE == "node2"
+  register: config_zabbix_node2
+
+#Running zabbix-agent
+- name: Autostart zabbix-agent -
+  systemd:
+   name: zabbix-agent
+   enabled: yes
+
+#Starting zabbix-agent
+- name: Starting zabbix-agent -
+  systemd:
+   state: started
+   name: zabbix-agent
+  register: zabbix_agent_status

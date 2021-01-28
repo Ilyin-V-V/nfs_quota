@@ -1,0 +1,118 @@
+- include_vars: ../../conf.yml
+# Delete file corosync.conf
+- name: Delete file corosync.conf -
+  command: /usr/bin/truncate -s0 /etc/corosync/corosync.conf
+
+# Create Corosync.conf
+- name: Create Corosync.conf -
+  blockinfile:
+   path: /etc/corosync/corosync.conf
+   marker: "#Corosync cluster_nfs"
+   block: |
+    totem {
+     version: 2
+     cluster_name: nfs_cluster
+     secauth: off
+     transport: udpu
+    }
+
+    nodelist {
+     node {
+        ring0_addr: node1
+        nodeid: 1
+     }
+
+     node {
+        ring0_addr: node2
+        nodeid: 2
+     }
+    }
+
+    quorum {
+     provider: corosync_votequorum
+     two_node: 1
+    }
+
+    logging {
+     to_logfile: yes
+     logfile: /var/log/cluster/corosync.log
+     to_syslog: yes
+    }
+  register: add_corosync_conf
+
+# Activated running pacemaker
+- name: Autostart pacemaker -
+  systemd:
+   name: pacemaker
+   enabled: yes
+
+- name: Autostart pcsd.service -
+  systemd:
+   name: pcsd.service
+   enabled: yes
+
+# Activated running corosync     
+- name: Autostart corosync -
+  systemd:
+   name: corosync
+   enabled: yes
+
+# Set password user PACEMAKER
+- name: Set password user PACEMAKER -
+  user:
+   user: "{{ PACEUSER }}"
+   password: "{{ PACEPASSWDHASH }}"
+  register: passwd_status
+
+# Starting service PACEMAKER COROSYNC
+- name: Starting corosync -
+  systemd:
+   state: started
+   name: corosync
+  register: corosync_status
+
+- name: Starting pacemaker -
+  systemd:
+   state: started
+   name: pacemaker
+  register: pacemaker_status
+
+# Disable ipV6 pcsd
+- name: Disable ipV6 pcsd
+  lineinfile:
+   path: /etc/sysconfig/pcsd
+   insertafter: '^#PCSD_BIND_ADDR='
+   line: "PCSD_BIND_ADDR=0.0.0.0"
+   state: present
+
+- name: Starting pcsd.service -
+  systemd:
+   state: started
+   name: pcsd.service
+  register: pcsd_service_status
+
+# Create cluster
+- name: Create cluster -
+  shell: |
+   /usr/sbin/pcs cluster auth node1 node2 -u {{ PACEUSER }} -p {{ PACEPASSWD }}
+   /usr/sbin/pcs cluster setup --name gw_cluster node1 node2
+   /usr/sbin/pcs cluster enable --all
+   /usr/sbin/pcs cluster start --all
+  register: enable_cluster
+
+# Presetting cluster
+- name: Presetting cluster -
+  shell: |
+   /usr/sbin/pcs property set maintenance-mode=false
+   /usr/sbin/pcs property set no-quorum-policy=ignore
+   /usr/sbin/pcs property set start-failure-is-fatal=false
+   /usr/sbin/pcs property set stonith-enabled=false
+   /usr/sbin/pcs property set stop-all-resources=false
+   /usr/sbin/pcs property set symmetric-cluster=true
+   /usr/sbin/pcs resource defaults resource-stickiness=100
+  register: config_cluster
+
+- name: Reboot Node -
+  reboot:
+  register: reboot_status
+

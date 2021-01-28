@@ -1,0 +1,27 @@
+# Install and update packages
+- name: Install epel-release -
+  yum:
+   name: epel-release
+   state: installed
+  register: yum_epel 
+- name: Update package -
+  yum:
+   name: "*"
+   state: latest
+  register: yum_update
+- name: Clean package -
+  command: /usr/bin/yum -y autoremove
+  register: yum_autoremove
+- name: Install package -
+  yum:
+   name:
+    - mc
+    - nano
+    - bind-utils
+    - net-tools
+    - traceroute
+    - tcpdump
+    - htop
+    - wget
+   state: installed
+  register: yum_install 

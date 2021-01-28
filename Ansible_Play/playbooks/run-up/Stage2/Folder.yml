@@ -1,0 +1,16 @@
+- include_vars: ../../conf.yml
+#Creating a structure home
+- name: Create homes conf dir -
+  file:
+   path: '{{ CLUSTER_PATH }}'
+   state: directory
+   mode: 0755
+  register: conf_node_status
+
+- name: Create temp conf dir -
+  file:
+   path: /opt/temp
+   state: directory
+   mode: 0777
+  register: temp_node_status
+
