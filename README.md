@@ -1,5 +1,6 @@
 ### <b> About project </b>
-    This project provides fault-tolerant NSF service from two or more cluster nodes with one floating IP address.
+    This project provides fault-tolerant NSF service
+    from two or more cluster nodes with one floating IP address.
     Quota management is shown in the diagram
 ![Screenshot](quota.png)
 ### <b> Functions</b>
